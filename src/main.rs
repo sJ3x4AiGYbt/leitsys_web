@@ -1,0 +1,26 @@
+mod auth;
+mod routes;
+mod views;
+mod components;
+
+use dioxus::prelude::*;
+use routes::Route;
+use auth::provide_auth;
+
+const FAVICON: Asset = asset!("/assets/favicon.ico");
+const DX_COMPONENTS_CSS: Asset = asset!("/assets/dx-components-theme.css");
+
+fn main() {
+    dioxus::launch(App);
+}
+
+#[component]
+fn App() -> Element {
+    provide_auth();
+
+    rsx! {
+        document::Link { rel: "icon", href: FAVICON }
+        document::Link { rel: "stylesheet", href: DX_COMPONENTS_CSS }
+        Router::<Route> {}
+    }
+}

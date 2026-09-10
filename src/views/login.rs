@@ -1,7 +1,12 @@
 use dioxus::prelude::*;
+use dioxus_primitives::toast::{use_toast, ToastOptions};
+use crate::api;
 use crate::auth::use_auth;
 use crate::routes::Route;
 use crate::components::card::{Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter};
+use crate::components::button::{Button, ButtonVariant};
+use crate::components::input::Input;
+use crate::components::label::Label;
 
 #[derive(Clone, Copy, PartialEq)]
 enum AuthView {
@@ -18,6 +23,7 @@ pub fn Login() -> Element {
         div {
             style: "max-width: 400px; margin: 5rem auto;",
             Card {
+                style: "width: 100%; max-width: 24rem;",
                 match view() {
                     AuthView::Login => rsx! { LoginForm { view } },
                     AuthView::Signup => rsx! { SignupForm { view } },
@@ -28,36 +34,90 @@ pub fn Login() -> Element {
     }
 }
 
+
 #[component]
 fn LoginForm(mut view: Signal<AuthView>) -> Element {
     let mut auth = use_auth();
     let nav = use_navigator();
+    let toast = use_toast();
 
-    let on_submit = move |_| {
-        // ... credential verification ...
-        auth.login();
-        nav.push(Route::Home {});
+    let mut username = use_signal(String::new);
+    let mut password = use_signal(String::new);
+    let mut submitting = use_signal(|| false);
+
+    let on_submit = move |evt: FormEvent| {
+        evt.prevent_default();
+        if submitting() {
+            return;
+        }
+        submitting.set(true);
+
+        spawn(async move {
+            match api::login(&username(), &password()).await {
+                Ok(token) => {
+                    auth.login(token);
+                    nav.push(Route::Home {});
+                }
+                Err(message) => {
+                    toast.error(message, ToastOptions::new());
+                    submitting.set(false);
+                }
+            }
+        });
     };
 
     rsx! {
         CardHeader {
-            CardTitle { "Log in" }
-            CardDescription { "Enter your credentials to continue" }
+            CardTitle { "Log in to your account" }
+            CardDescription { "Enter your username below to login to your account" }
         }
         CardContent {
-            input { r#type: "email", placeholder: "Email" }
-            input { r#type: "password", placeholder: "Password" }
-            button { onclick: on_submit, "Log in" }
-        }
-        CardFooter {
-            style: "display: flex; justify-content: space-between; width: 100%;",
-            a {
-                onclick: move |_| view.set(AuthView::ForgotPassword),
-                "Forgot password?"
+            form {
+                id: "login-form",
+                onsubmit: on_submit,
+                div { style: "display: flex; flex-direction: column; gap: 1.5rem;",
+                    div { style: "display: grid; gap: 0.5rem;",
+                        Label { html_for: "username", "Username" }
+                        Input {
+                            id: "username",
+                            r#type: "text",
+                            placeholder: "jane.doe",
+                            value: "{username}",
+                            oninput: move |e: FormEvent| username.set(e.value()),
+                        }
+                    }
+                    div { style: "display: grid; gap: 0.5rem;",
+                        div { style: "display: flex; align-items: center;",
+                            Label { html_for: "password", "Password" }
+                            a {
+                                onclick: move |_| view.set(AuthView::ForgotPassword),
+                                style: "margin-left: auto; font-size: 0.875rem; color: var(--secondary-color-5); text-decoration: underline; text-underline-offset: 4px;",
+                                "Forgot your password?"
+                            }
+                        }
+                        Input {
+                            id: "password",
+                            r#type: "password",
+                            value: "{password}",
+                            oninput: move |e: FormEvent| password.set(e.value()),
+                        }
+                    }
+                }
             }
-            a {
+        }
+        CardFooter { style: "flex-direction: column; gap: 0.5rem;",
+            Button {
+                r#type: "submit",
+                form: "login-form",
+                style: "width: 100%;",
+                disabled: submitting(),
+                if submitting() { "Logging in..." } else { "Login" }
+            }
+            Button {
+                variant: ButtonVariant::Outline,
                 onclick: move |_| view.set(AuthView::Signup),
-                "Create an account"
+                style: "width: 100%;",
+                "Sign Up"
             }
         }
     }
@@ -65,25 +125,90 @@ fn LoginForm(mut view: Signal<AuthView>) -> Element {
 
 #[component]
 fn SignupForm(mut view: Signal<AuthView>) -> Element {
-    let on_submit = move |_| {
-        // ... account creation ...
+    let toast = use_toast();
+
+    let mut username = use_signal(String::new);
+    let mut email = use_signal(String::new);
+    let mut password = use_signal(String::new);
+    let mut submitting = use_signal(|| false);
+
+    let on_submit = move |evt: FormEvent| {
+        evt.prevent_default();
+        if submitting() {
+            return;
+        }
+        submitting.set(true);
+
+        spawn(async move {
+            match api::register(&username(), &email(), &password()).await {
+                Ok(message) => {
+                    submitting.set(false);
+                    toast.success(message, ToastOptions::new());
+                    view.set(AuthView::Login);
+                }
+                Err(message) => {
+                    toast.error(message, ToastOptions::new());
+                    submitting.set(false);
+                }
+            }
+        });
     };
 
     rsx! {
         CardHeader {
             CardTitle { "Create an account" }
-            CardDescription { "Fill in your information" }
+            CardDescription { "Fill in your information to get started" }
         }
         CardContent {
-            input { r#type: "text", placeholder: "Name" }
-            input { r#type: "email", placeholder: "Email" }
-            input { r#type: "password", placeholder: "Password" }
-            button { onclick: on_submit, "Sign up" }
+            form {
+                id: "signup-form",
+                onsubmit: on_submit,
+                div { style: "display: flex; flex-direction: column; gap: 1.5rem;",
+                    div { style: "display: grid; gap: 0.5rem;",
+                        Label { html_for: "username", "Username" }
+                        Input {
+                            id: "username",
+                            r#type: "text",
+                            placeholder: "jane.doe",
+                            value: "{username}",
+                            oninput: move |e: FormEvent| username.set(e.value()),
+                        }
+                    }
+                    div { style: "display: grid; gap: 0.5rem;",
+                        Label { html_for: "email", "Email" }
+                        Input {
+                            id: "email",
+                            r#type: "email",
+                            placeholder: "m@example.com",
+                            value: "{email}",
+                            oninput: move |e: FormEvent| email.set(e.value()),
+                        }
+                    }
+                    div { style: "display: grid; gap: 0.5rem;",
+                        Label { html_for: "password", "Password" }
+                        Input {
+                            id: "password",
+                            r#type: "password",
+                            value: "{password}",
+                            oninput: move |e: FormEvent| password.set(e.value()),
+                        }
+                    }
+                }
+            }
         }
-        CardFooter {
-            a {
+        CardFooter { style: "flex-direction: column; gap: 0.5rem;",
+            Button {
+                r#type: "submit",
+                form: "signup-form",
+                style: "width: 100%;",
+                disabled: submitting(),
+                if submitting() { "Creating account..." } else { "Sign up" }
+            }
+            Button {
+                variant: ButtonVariant::Outline,
                 onclick: move |_| view.set(AuthView::Login),
-                "Already have an account? Log in"
+                style: "width: 100%;",
+                "Log in"
             }
         }
     }
@@ -91,21 +216,45 @@ fn SignupForm(mut view: Signal<AuthView>) -> Element {
 
 #[component]
 fn ForgotPasswordForm(mut view: Signal<AuthView>) -> Element {
-    let on_submit = move |_| {
-        // ... send mail for reset ...
+    // Not yet supported by the API — no `/auth/forgot-password` route exists.
+    let toast = use_toast();
+    let on_submit = move |evt: FormEvent| {
+        evt.prevent_default();
+        toast.info(
+            "Password reset isn't supported by the API yet.".to_string(),
+            ToastOptions::new(),
+        );
     };
 
     rsx! {
         CardHeader {
             CardTitle { "Forgot password" }
-            CardDescription { "We'll send you a reset link" }
+            CardDescription { "Enter your email and we'll send you a reset link" }
         }
         CardContent {
-            input { r#type: "email", placeholder: "Email" }
-            button { onclick: on_submit, "Send link" }
+            form {
+                id: "forgot-password-form",
+                onsubmit: on_submit,
+                div { style: "display: grid; gap: 0.5rem;",
+                    Label { html_for: "email", "Email" }
+                    Input {
+                        id: "email",
+                        r#type: "email",
+                        placeholder: "m@example.com",
+                    }
+                }
+            }
         }
-        CardFooter {
-            a {
+        CardFooter { style: "flex-direction: column; gap: 0.5rem;",
+            Button {
+                r#type: "submit",
+                form: "forgot-password-form",
+                style: "width: 100%;",
+                "Send link"
+            }
+            Button {
+                variant: ButtonVariant::Ghost,
+                style: "width: 100%;",
                 onclick: move |_| view.set(AuthView::Login),
                 "Back to login"
             }

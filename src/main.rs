@@ -18,7 +18,16 @@ fn main() {
 
 #[component]
 fn App() -> Element {
-    provide_auth();
+    let mut auth = provide_auth();
+
+    use_effect(move || {
+        spawn(async move {
+            if let Ok(token) = api::refresh().await {
+                auth.login(token);
+            }
+            auth.finish_restoring();
+        });
+    });
 
     rsx! {
         document::Link { rel: "icon", href: FAVICON }

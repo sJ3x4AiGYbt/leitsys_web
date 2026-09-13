@@ -216,14 +216,31 @@ fn SignupForm(mut view: Signal<AuthView>) -> Element {
 
 #[component]
 fn ForgotPasswordForm(mut view: Signal<AuthView>) -> Element {
-    // Not yet supported by the API — no `/auth/forgot-password` route exists.
     let toast = use_toast();
+
+    let mut email = use_signal(String::new);
+    let mut submitting = use_signal(|| false);
+
     let on_submit = move |evt: FormEvent| {
         evt.prevent_default();
-        toast.info(
-            "Password reset isn't supported by the API yet.".to_string(),
-            ToastOptions::new(),
-        );
+        if submitting() {
+            return;
+        }
+        submitting.set(true);
+
+        spawn(async move {
+            match api::forgot_password(&email()).await {
+                Ok(message) => {
+                    submitting.set(false);
+                    toast.success(message, ToastOptions::new());
+                    view.set(AuthView::Login);
+                }
+                Err(message) => {
+                    toast.error(message, ToastOptions::new());
+                    submitting.set(false);
+                }
+            }
+        });
     };
 
     rsx! {
@@ -241,6 +258,8 @@ fn ForgotPasswordForm(mut view: Signal<AuthView>) -> Element {
                         id: "email",
                         r#type: "email",
                         placeholder: "m@example.com",
+                        value: "{email}",
+                        oninput: move |e: FormEvent| email.set(e.value()),
                     }
                 }
             }
@@ -250,7 +269,8 @@ fn ForgotPasswordForm(mut view: Signal<AuthView>) -> Element {
                 r#type: "submit",
                 form: "forgot-password-form",
                 style: "width: 100%;",
-                "Send link"
+                disabled: submitting(),
+                if submitting() { "Sending..." } else { "Send link" }
             }
             Button {
                 variant: ButtonVariant::Ghost,

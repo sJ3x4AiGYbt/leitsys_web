@@ -1,6 +1,6 @@
 use dioxus::prelude::*;
 use crate::auth::use_auth;
-use crate::views::{Login, Home, Settings, Contact};
+use crate::views::{Login, Home, Settings, Contact, ResetPassword};
 
 #[rustfmt::skip]
 #[derive(Routable, Clone, PartialEq)]
@@ -9,6 +9,8 @@ pub enum Route {
     Root {},
     #[route("/login")]
     Login {},
+    #[route("/reset-password?:token")]
+    ResetPassword { token: String },
     #[layout(RequireAuth)]
         #[route("/home")]
         Home {},

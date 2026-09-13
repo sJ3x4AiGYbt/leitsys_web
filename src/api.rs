@@ -21,6 +21,17 @@ struct CreateUser<'a> {
     pswd: &'a str,
 }
 
+#[derive(Serialize)]
+struct ForgotPasswordRequest<'a> {
+    email: &'a str,
+}
+
+#[derive(Serialize)]
+struct ResetPasswordRequest<'a> {
+    token: &'a str,
+    pswd: &'a str,
+}
+
 /// The claims carried by the access token, decoded client-side purely for
 /// display (the backend is the one actually verifying the signature on
 /// every protected request).
@@ -99,6 +110,36 @@ pub async fn register(username: &str, email: &str, pswd: &str) -> Result<String,
         Ok(parsed.message.unwrap_or_else(|| "Account created successfully.".to_string()))
     } else {
         Err(parsed.message.unwrap_or_else(|| "Unable to create the account".to_string()))
+    }
+}
+
+pub async fn forgot_password(email: &str) -> Result<String, String> {
+    let request = reqwest::Client::new()
+        .post(format!("{API_BASE_URL}/auth/forgot-password"))
+        .json(&ForgotPasswordRequest { email });
+
+    let parsed: ApiResponse<()> = send(request).await?;
+
+    if parsed.success {
+        Ok(parsed
+            .message
+            .unwrap_or_else(|| "If this email is registered, a password reset link has been sent.".to_string()))
+    } else {
+        Err(parsed.message.unwrap_or_else(|| "Unable to request a password reset".to_string()))
+    }
+}
+
+pub async fn reset_password(token: &str, pswd: &str) -> Result<String, String> {
+    let request = reqwest::Client::new()
+        .post(format!("{API_BASE_URL}/auth/reset-password"))
+        .json(&ResetPasswordRequest { token, pswd });
+
+    let parsed: ApiResponse<()> = send(request).await?;
+
+    if parsed.success {
+        Ok(parsed.message.unwrap_or_else(|| "Password reset successfully.".to_string()))
+    } else {
+        Err(parsed.message.unwrap_or_else(|| "Unable to reset the password".to_string()))
     }
 }
 

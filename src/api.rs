@@ -22,6 +22,16 @@ struct CreateUser<'a> {
 }
 
 #[derive(Serialize)]
+struct VerifyEmailRequest<'a> {
+    token: &'a str,
+}
+
+#[derive(Serialize)]
+struct ResendVerificationRequest<'a> {
+    email: &'a str,
+}
+
+#[derive(Serialize)]
 struct ForgotPasswordRequest<'a> {
     email: &'a str,
 }
@@ -110,6 +120,37 @@ pub async fn register(username: &str, email: &str, pswd: &str) -> Result<String,
         Ok(parsed.message.unwrap_or_else(|| "Account created successfully.".to_string()))
     } else {
         Err(parsed.message.unwrap_or_else(|| "Unable to create the account".to_string()))
+    }
+}
+
+pub async fn verify_email(token: &str) -> Result<String, String> {
+    let request = reqwest::Client::new()
+        .post(format!("{API_BASE_URL}/auth/verify-email"))
+        .json(&VerifyEmailRequest { token });
+
+    let parsed: ApiResponse<()> = send(request).await?;
+
+    if parsed.success {
+        Ok(parsed.message.unwrap_or_else(|| "Email verified.".to_string()))
+    } else {
+        Err(parsed.message.unwrap_or_else(|| "Unable to verify this email".to_string()))
+    }
+}
+
+pub async fn resend_verification(email: &str) -> Result<String, String> {
+    let request = reqwest::Client::new()
+        .post(format!("{API_BASE_URL}/auth/resend-verification"))
+        .json(&ResendVerificationRequest { email });
+
+    let parsed: ApiResponse<()> = send(request).await?;
+
+    if parsed.success {
+        Ok(parsed.message.unwrap_or_else(|| {
+            "If this email is registered and not yet verified, a new verification link has been sent."
+                .to_string()
+        }))
+    } else {
+        Err(parsed.message.unwrap_or_else(|| "Unable to resend the verification email".to_string()))
     }
 }
 

@@ -13,6 +13,7 @@ enum AuthView {
     Login,
     Signup,
     ForgotPassword,
+    ResendVerification,
 }
 
 #[component]
@@ -28,6 +29,7 @@ pub fn Login() -> Element {
                     AuthView::Login => rsx! { LoginForm { view } },
                     AuthView::Signup => rsx! { SignupForm { view } },
                     AuthView::ForgotPassword => rsx! { ForgotPasswordForm { view } },
+                    AuthView::ResendVerification => rsx! { ResendVerificationForm { view } },
                 }
             }
         }
@@ -59,8 +61,12 @@ fn LoginForm(mut view: Signal<AuthView>) -> Element {
                     nav.push(Route::Home {});
                 }
                 Err(message) => {
+                    let needs_verification = message.contains("verify your email");
                     toast.error(message, ToastOptions::new());
                     submitting.set(false);
+                    if needs_verification {
+                        view.set(AuthView::ResendVerification);
+                    }
                 }
             }
         });
@@ -118,6 +124,11 @@ fn LoginForm(mut view: Signal<AuthView>) -> Element {
                 onclick: move |_| view.set(AuthView::Signup),
                 style: "width: 100%;",
                 "Sign Up"
+            }
+            a {
+                onclick: move |_| view.set(AuthView::ResendVerification),
+                style: "font-size: 0.875rem; color: var(--secondary-color-5); text-decoration: underline; text-underline-offset: 4px; cursor: pointer;",
+                "Didn't get a verification email?"
             }
         }
     }
@@ -268,6 +279,74 @@ fn ForgotPasswordForm(mut view: Signal<AuthView>) -> Element {
             Button {
                 r#type: "submit",
                 form: "forgot-password-form",
+                style: "width: 100%;",
+                disabled: submitting(),
+                if submitting() { "Sending..." } else { "Send link" }
+            }
+            Button {
+                variant: ButtonVariant::Ghost,
+                style: "width: 100%;",
+                onclick: move |_| view.set(AuthView::Login),
+                "Back to login"
+            }
+        }
+    }
+}
+
+#[component]
+fn ResendVerificationForm(mut view: Signal<AuthView>) -> Element {
+    let toast = use_toast();
+
+    let mut email = use_signal(String::new);
+    let mut submitting = use_signal(|| false);
+
+    let on_submit = move |evt: FormEvent| {
+        evt.prevent_default();
+        if submitting() {
+            return;
+        }
+        submitting.set(true);
+
+        spawn(async move {
+            match api::resend_verification(&email()).await {
+                Ok(message) => {
+                    submitting.set(false);
+                    toast.success(message, ToastOptions::new());
+                    view.set(AuthView::Login);
+                }
+                Err(message) => {
+                    toast.error(message, ToastOptions::new());
+                    submitting.set(false);
+                }
+            }
+        });
+    };
+
+    rsx! {
+        CardHeader {
+            CardTitle { "Resend verification email" }
+            CardDescription { "Enter your email and we'll send you a new verification link" }
+        }
+        CardContent {
+            form {
+                id: "resend-verification-form",
+                onsubmit: on_submit,
+                div { style: "display: grid; gap: 0.5rem;",
+                    Label { html_for: "email", "Email" }
+                    Input {
+                        id: "email",
+                        r#type: "email",
+                        placeholder: "m@example.com",
+                        value: "{email}",
+                        oninput: move |e: FormEvent| email.set(e.value()),
+                    }
+                }
+            }
+        }
+        CardFooter { style: "flex-direction: column; gap: 0.5rem;",
+            Button {
+                r#type: "submit",
+                form: "resend-verification-form",
                 style: "width: 100%;",
                 disabled: submitting(),
                 if submitting() { "Sending..." } else { "Send link" }

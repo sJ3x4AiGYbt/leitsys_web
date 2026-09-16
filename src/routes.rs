@@ -1,6 +1,6 @@
 use dioxus::prelude::*;
 use crate::auth::use_auth;
-use crate::views::{Login, Home, Settings, Contact, ResetPassword, VerifyEmail};
+use crate::views::{Login, Home, Settings, Contact, ResetPassword, VerifyEmail, Categories, Questions, Review};
 
 #[rustfmt::skip]
 #[derive(Routable, Clone, PartialEq)]
@@ -20,6 +20,12 @@ pub enum Route {
         Settings {},
         #[route("/contact")]
         Contact {},
+        #[route("/categories")]
+        Categories {},
+        #[route("/questions")]
+        Questions {},
+        #[route("/review")]
+        Review {},
 }
 
 #[component]
@@ -44,9 +50,8 @@ fn Root() -> Element {
     rsx! { div {} }
 }
 
-/// Layout guarding `/home`, `/settings` and `/contact` — redirects to
-/// `/login` if the user has no access token instead of rendering the
-/// nested route.
+/// Layout guarding the authenticated routes — redirects to `/login` if the
+/// user has no access token instead of rendering the nested route.
 #[component]
 fn RequireAuth() -> Element {
     let auth = use_auth();

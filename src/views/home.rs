@@ -15,7 +15,7 @@ pub fn Home() -> Element {
     let questions = use_resource(move || async move {
         let token = auth.token()?;
         let claims = decode_claims(&token)?;
-        api::get_my_questions(claims.user_id, &token).await.ok()
+        api::get_my_questions(claims.user_id, &token, false).await.ok()
     });
 
     let today = calendar::today();
@@ -38,6 +38,42 @@ pub fn Home() -> Element {
 
             div {
                 style: "display: flex; gap: 1.5rem; align-self: flex-end;",
+
+                // Categories (icon tag)
+                button {
+                    style: "background: none; border: none; cursor: pointer;",
+                    onclick: move |_| { nav.push(Route::Categories {}); },
+                    svg {
+                        width: "28",
+                        height: "28",
+                        view_box: "0 0 24 24",
+                        fill: "none",
+                        stroke: "currentColor",
+                        stroke_width: "2",
+                        stroke_linecap: "round",
+                        stroke_linejoin: "round",
+                        path { d: "M20 12l-8 8-9-9V4h7z" }
+                        circle { cx: "7.5", cy: "7.5", r: "1.5" }
+                    }
+                }
+
+                // Questions (icon list)
+                button {
+                    style: "background: none; border: none; cursor: pointer;",
+                    onclick: move |_| { nav.push(Route::Questions {}); },
+                    svg {
+                        width: "28",
+                        height: "28",
+                        view_box: "0 0 24 24",
+                        fill: "none",
+                        stroke: "currentColor",
+                        stroke_width: "2",
+                        stroke_linecap: "round",
+                        stroke_linejoin: "round",
+                        path { d: "M8 6h13M8 12h13M8 18h13" }
+                        path { d: "M3 6h.01M3 12h.01M3 18h.01" }
+                    }
+                }
 
                 // Settings (icon person)
                 button {
@@ -82,6 +118,12 @@ pub fn Home() -> Element {
                 StatTile { label: "Due today", value: today_count }
                 StatTile { label: "This month", value: month_count }
                 StatTile { label: "Active", value: active_count }
+            }
+
+            button {
+                style: "background: var(--secondary-color-5); color: white; border: none; border-radius: 8px; padding: 0.75rem; font-size: 1rem; font-weight: 600; cursor: pointer;",
+                onclick: move |_| { nav.push(Route::Review {}); },
+                "Start review"
             }
 
             div {

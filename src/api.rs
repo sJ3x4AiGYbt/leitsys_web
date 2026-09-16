@@ -237,16 +237,28 @@ pub async fn get_user(id: i64, token: &str) -> Result<User, String> {
     }
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct Question {
     pub id: i64,
+    pub title: String,
+    pub answer: String,
+    pub category_id: i64,
+    pub current_step_id: i64,
     pub next_review_date: String,
+    pub is_archived: bool,
 }
 
-pub async fn get_my_questions(user_id: i64, token: &str) -> Result<Vec<Question>, String> {
-    let request = reqwest::Client::new()
-        .get(format!("{API_BASE_URL}/questions/user/{user_id}?is_archived=false"))
-        .bearer_auth(token);
+/// Fetches the user's active (non-archived) questions.
+///
+/// When `due_only` is set, restricts to questions due today or overdue
+/// (backend's `status=todo` filter, which is `next_review_date <= now`).
+pub async fn get_my_questions(user_id: i64, token: &str, due_only: bool) -> Result<Vec<Question>, String> {
+    let mut url = format!("{API_BASE_URL}/questions/user/{user_id}?is_archived=false");
+    if due_only {
+        url.push_str("&status=todo");
+    }
+
+    let request = reqwest::Client::new().get(url).bearer_auth(token);
 
     let parsed: ApiResponse<Vec<Question>> = send(request).await?;
 
@@ -254,6 +266,214 @@ pub async fn get_my_questions(user_id: i64, token: &str) -> Result<Vec<Question>
         Ok(parsed.data.unwrap_or_default())
     } else {
         Err(parsed.message.unwrap_or_else(|| "Unable to fetch questions".to_string()))
+    }
+}
+
+#[derive(Serialize)]
+struct CreateQuestionRequest<'a> {
+    title: &'a str,
+    answer: &'a str,
+    category_id: Option<i64>,
+}
+
+pub async fn create_question(token: &str, title: &str, answer: &str, category_id: i64) -> Result<String, String> {
+    let request = reqwest::Client::new()
+        .post(format!("{API_BASE_URL}/questions"))
+        .bearer_auth(token)
+        .json(&CreateQuestionRequest { title, answer, category_id: Some(category_id) });
+
+    let parsed: ApiResponse<()> = send(request).await?;
+
+    if parsed.success {
+        Ok(parsed.message.unwrap_or_else(|| "Question recorded successfully.".to_string()))
+    } else {
+        Err(parsed.message.unwrap_or_else(|| "Unable to create the question".to_string()))
+    }
+}
+
+#[derive(Serialize)]
+struct UpdateQuestionRequest<'a> {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    title: Option<&'a str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    answer: Option<&'a str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    category_id: Option<i64>,
+}
+
+pub async fn update_question(
+    id: i64,
+    token: &str,
+    title: Option<&str>,
+    answer: Option<&str>,
+    category_id: Option<i64>,
+) -> Result<String, String> {
+    let request = reqwest::Client::new()
+        .put(format!("{API_BASE_URL}/questions/{id}"))
+        .bearer_auth(token)
+        .json(&UpdateQuestionRequest { title, answer, category_id });
+
+    let parsed: ApiResponse<()> = send(request).await?;
+
+    if parsed.success {
+        Ok(parsed.message.unwrap_or_else(|| "Question updated successfully.".to_string()))
+    } else {
+        Err(parsed.message.unwrap_or_else(|| "Unable to update the question".to_string()))
+    }
+}
+
+pub async fn delete_question(id: i64, token: &str) -> Result<String, String> {
+    let request = reqwest::Client::new()
+        .delete(format!("{API_BASE_URL}/questions/{id}"))
+        .bearer_auth(token);
+
+    let parsed: ApiResponse<()> = send(request).await?;
+
+    if parsed.success {
+        Ok(parsed.message.unwrap_or_else(|| "Question deleted successfully.".to_string()))
+    } else {
+        Err(parsed.message.unwrap_or_else(|| "Unable to delete the question".to_string()))
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+pub struct Category {
+    pub id: i64,
+    pub title: String,
+    pub color_code: String,
+}
+
+pub async fn get_my_categories(user_id: i64, token: &str) -> Result<Vec<Category>, String> {
+    let request = reqwest::Client::new()
+        .get(format!("{API_BASE_URL}/categories/user/{user_id}"))
+        .bearer_auth(token);
+
+    let parsed: ApiResponse<Vec<Category>> = send(request).await?;
+
+    if parsed.success {
+        Ok(parsed.data.unwrap_or_default())
+    } else {
+        Err(parsed.message.unwrap_or_else(|| "Unable to fetch categories".to_string()))
+    }
+}
+
+#[derive(Serialize)]
+struct CreateCategoryRequest<'a> {
+    title: &'a str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    color_code: Option<&'a str>,
+}
+
+pub async fn create_category(token: &str, title: &str, color_code: Option<&str>) -> Result<String, String> {
+    let request = reqwest::Client::new()
+        .post(format!("{API_BASE_URL}/categories"))
+        .bearer_auth(token)
+        .json(&CreateCategoryRequest { title, color_code });
+
+    let parsed: ApiResponse<()> = send(request).await?;
+
+    if parsed.success {
+        Ok(parsed.message.unwrap_or_else(|| "Category recorded successfully.".to_string()))
+    } else {
+        Err(parsed.message.unwrap_or_else(|| "Unable to create the category".to_string()))
+    }
+}
+
+#[derive(Serialize)]
+struct UpdateCategoryRequest<'a> {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    title: Option<&'a str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    color_code: Option<&'a str>,
+}
+
+pub async fn update_category(id: i64, token: &str, title: Option<&str>, color_code: Option<&str>) -> Result<String, String> {
+    let request = reqwest::Client::new()
+        .put(format!("{API_BASE_URL}/categories/{id}"))
+        .bearer_auth(token)
+        .json(&UpdateCategoryRequest { title, color_code });
+
+    let parsed: ApiResponse<()> = send(request).await?;
+
+    if parsed.success {
+        Ok(parsed.message.unwrap_or_else(|| "Category updated successfully.".to_string()))
+    } else {
+        Err(parsed.message.unwrap_or_else(|| "Unable to update the category".to_string()))
+    }
+}
+
+pub async fn delete_category(id: i64, token: &str) -> Result<String, String> {
+    let request = reqwest::Client::new()
+        .delete(format!("{API_BASE_URL}/categories/{id}"))
+        .bearer_auth(token);
+
+    let parsed: ApiResponse<()> = send(request).await?;
+
+    if parsed.success {
+        Ok(parsed.message.unwrap_or_else(|| "Category deleted successfully.".to_string()))
+    } else {
+        Err(parsed.message.unwrap_or_else(|| "Unable to delete the category".to_string()))
+    }
+}
+
+#[derive(Serialize)]
+struct CreateAnswerRequest<'a> {
+    question_id: i64,
+    user_response: &'a str,
+    step: i64,
+    is_correct: bool,
+}
+
+#[derive(Deserialize)]
+struct CreatedAnswer {
+    id: i64,
+}
+
+/// Records an answer and returns its id, so the review flow can immediately
+/// follow up with `mark_answer_correct`/`mark_answer_incorrect`.
+pub async fn create_answer(token: &str, question_id: i64, user_response: &str, step: i64, is_correct: bool) -> Result<i64, String> {
+    let request = reqwest::Client::new()
+        .post(format!("{API_BASE_URL}/answers"))
+        .bearer_auth(token)
+        .json(&CreateAnswerRequest { question_id, user_response, step, is_correct });
+
+    let parsed: ApiResponse<CreatedAnswer> = send(request).await?;
+
+    if parsed.success {
+        parsed
+            .data
+            .map(|d| d.id)
+            .ok_or_else(|| "Invalid response from the server".to_string())
+    } else {
+        Err(parsed.message.unwrap_or_else(|| "Unable to record the answer".to_string()))
+    }
+}
+
+pub async fn mark_answer_correct(answer_id: i64, token: &str) -> Result<String, String> {
+    let request = reqwest::Client::new()
+        .patch(format!("{API_BASE_URL}/answers/{answer_id}/correct"))
+        .bearer_auth(token);
+
+    let parsed: ApiResponse<()> = send(request).await?;
+
+    if parsed.success {
+        Ok(parsed.message.unwrap_or_else(|| "Correct answer! Question moved to the next step.".to_string()))
+    } else {
+        Err(parsed.message.unwrap_or_else(|| "Unable to record the result".to_string()))
+    }
+}
+
+pub async fn mark_answer_incorrect(answer_id: i64, token: &str) -> Result<String, String> {
+    let request = reqwest::Client::new()
+        .patch(format!("{API_BASE_URL}/answers/{answer_id}/error"))
+        .bearer_auth(token);
+
+    let parsed: ApiResponse<()> = send(request).await?;
+
+    if parsed.success {
+        Ok(parsed.message.unwrap_or_else(|| "Incorrect answer. Question reset to the first step.".to_string()))
+    } else {
+        Err(parsed.message.unwrap_or_else(|| "Unable to record the result".to_string()))
     }
 }
 

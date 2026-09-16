@@ -22,6 +22,16 @@ struct CreateUser<'a> {
 }
 
 #[derive(Serialize)]
+struct UpdateUserRequest<'a> {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    username: Option<&'a str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    email: Option<&'a str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pswd: Option<&'a str>,
+}
+
+#[derive(Serialize)]
 struct VerifyEmailRequest<'a> {
     token: &'a str,
 }
@@ -224,5 +234,69 @@ pub async fn get_user(id: i64, token: &str) -> Result<User, String> {
             .ok_or_else(|| "Invalid response from the server".to_string())
     } else {
         Err(parsed.message.unwrap_or_else(|| "Unable to fetch the user".to_string()))
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct Question {
+    pub id: i64,
+    pub next_review_date: String,
+}
+
+pub async fn get_my_questions(user_id: i64, token: &str) -> Result<Vec<Question>, String> {
+    let request = reqwest::Client::new()
+        .get(format!("{API_BASE_URL}/questions/user/{user_id}?is_archived=false"))
+        .bearer_auth(token);
+
+    let parsed: ApiResponse<Vec<Question>> = send(request).await?;
+
+    if parsed.success {
+        Ok(parsed.data.unwrap_or_default())
+    } else {
+        Err(parsed.message.unwrap_or_else(|| "Unable to fetch questions".to_string()))
+    }
+}
+
+pub async fn update_profile(id: i64, token: &str, username: &str, email: &str) -> Result<String, String> {
+    let request = reqwest::Client::new()
+        .put(format!("{API_BASE_URL}/users/{id}"))
+        .bearer_auth(token)
+        .json(&UpdateUserRequest { username: Some(username), email: Some(email), pswd: None });
+
+    let parsed: ApiResponse<()> = send(request).await?;
+
+    if parsed.success {
+        Ok(parsed.message.unwrap_or_else(|| "Profile updated successfully.".to_string()))
+    } else {
+        Err(parsed.message.unwrap_or_else(|| "Unable to update the profile".to_string()))
+    }
+}
+
+pub async fn change_password(id: i64, token: &str, pswd: &str) -> Result<String, String> {
+    let request = reqwest::Client::new()
+        .put(format!("{API_BASE_URL}/users/{id}"))
+        .bearer_auth(token)
+        .json(&UpdateUserRequest { username: None, email: None, pswd: Some(pswd) });
+
+    let parsed: ApiResponse<()> = send(request).await?;
+
+    if parsed.success {
+        Ok(parsed.message.unwrap_or_else(|| "Password changed successfully.".to_string()))
+    } else {
+        Err(parsed.message.unwrap_or_else(|| "Unable to change the password".to_string()))
+    }
+}
+
+pub async fn delete_user(id: i64, token: &str) -> Result<String, String> {
+    let request = reqwest::Client::new()
+        .delete(format!("{API_BASE_URL}/users/{id}"))
+        .bearer_auth(token);
+
+    let parsed: ApiResponse<()> = send(request).await?;
+
+    if parsed.success {
+        Ok(parsed.message.unwrap_or_else(|| "Account deleted successfully.".to_string()))
+    } else {
+        Err(parsed.message.unwrap_or_else(|| "Unable to delete the account".to_string()))
     }
 }

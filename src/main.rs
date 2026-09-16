@@ -1,5 +1,6 @@
 mod api;
 mod auth;
+mod calendar;
 mod routes;
 mod views;
 mod components;

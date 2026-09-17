@@ -18,10 +18,15 @@ pub fn Questions() -> Element {
         api::get_my_categories(claims.user_id, &token).await.ok()
     });
 
-    let mut questions = use_resource(move || async move {
-        let token = auth.token()?;
-        let claims = decode_claims(&token)?;
-        api::get_my_questions(claims.user_id, &token, false).await.ok()
+    let mut view_archived = use_signal(|| false);
+
+    let mut questions = use_resource(move || {
+        let archived = view_archived();
+        async move {
+            let token = auth.token()?;
+            let claims = decode_claims(&token)?;
+            api::get_my_questions(claims.user_id, &token, archived, false).await.ok()
+        }
     });
 
     let mut new_title = use_signal(String::new);
@@ -77,6 +82,20 @@ pub fn Questions() -> Element {
             style: "max-width: 640px; margin: 3rem auto; display: flex; flex-direction: column; gap: 1.5rem;",
             h1 { "Questions" }
 
+            div { style: "display: flex; gap: 0.5rem;",
+                Button {
+                    variant: if view_archived() { ButtonVariant::Outline } else { ButtonVariant::Primary },
+                    onclick: move |_| view_archived.set(false),
+                    "Active"
+                }
+                Button {
+                    variant: if view_archived() { ButtonVariant::Primary } else { ButtonVariant::Outline },
+                    onclick: move |_| view_archived.set(true),
+                    "Mastered"
+                }
+            }
+
+            if !view_archived() {
             Card {
                 CardHeader {
                     CardTitle { "New question" }
@@ -136,23 +155,114 @@ pub fn Questions() -> Element {
                     }
                 }
             }
+            }
 
-            match &*questions.read() {
-                Some(Some(qs)) if !qs.is_empty() => rsx! {
-                    div { style: "display: flex; flex-direction: column; gap: 0.75rem;",
-                        for question in qs.clone() {
-                            QuestionRow {
-                                category: cats_for_form.iter().find(|c| c.id == question.category_id).cloned(),
-                                question,
-                                categories: cats_for_form.clone(),
-                                on_changed: move |_| { questions.restart(); },
+            if view_archived() {
+                match &*questions.read() {
+                    Some(Some(qs)) if !qs.is_empty() => rsx! {
+                        div { style: "display: flex; flex-direction: column; gap: 0.75rem;",
+                            for question in qs.clone() {
+                                ArchivedQuestionRow {
+                                    category: cats_for_form.iter().find(|c| c.id == question.category_id).cloned(),
+                                    question,
+                                    on_changed: move |_| { questions.restart(); },
+                                }
                             }
                         }
+                    },
+                    Some(Some(_)) => rsx! { p { style: "color: #888;", "No mastered questions yet." } },
+                    Some(None) => rsx! { p { "Unable to load your questions." } },
+                    None => rsx! { p { "Loading..." } },
+                }
+            } else {
+                match &*questions.read() {
+                    Some(Some(qs)) if !qs.is_empty() => rsx! {
+                        div { style: "display: flex; flex-direction: column; gap: 0.75rem;",
+                            for question in qs.clone() {
+                                QuestionRow {
+                                    category: cats_for_form.iter().find(|c| c.id == question.category_id).cloned(),
+                                    question,
+                                    categories: cats_for_form.clone(),
+                                    on_changed: move |_| { questions.restart(); },
+                                }
+                            }
+                        }
+                    },
+                    Some(Some(_)) => rsx! { p { style: "color: #888;", "No questions yet. Create your first one above." } },
+                    Some(None) => rsx! { p { "Unable to load your questions." } },
+                    None => rsx! { p { "Loading..." } },
+                }
+            }
+        }
+    }
+}
+
+#[component]
+fn ArchivedQuestionRow(question: Question, category: Option<Category>, on_changed: EventHandler<()>) -> Element {
+    let auth = use_auth();
+    let toast = use_toast();
+    let question_id = question.id;
+
+    let mut confirming_delete = use_signal(|| false);
+    let mut delete_submitting = use_signal(|| false);
+
+    let on_delete = move |_| {
+        if delete_submitting() {
+            return;
+        }
+        let Some(token) = auth.token() else { return };
+        delete_submitting.set(true);
+
+        spawn(async move {
+            match api::delete_question(question_id, &token).await {
+                Ok(message) => {
+                    delete_submitting.set(false);
+                    confirming_delete.set(false);
+                    toast.success(message, ToastOptions::new());
+                    on_changed.call(());
+                }
+                Err(message) => {
+                    delete_submitting.set(false);
+                    confirming_delete.set(false);
+                    toast.error(message, ToastOptions::new());
+                }
+            }
+        });
+    };
+
+    rsx! {
+        Card {
+            CardContent { style: "display: flex; flex-direction: column; gap: 0.5rem; padding: 1rem;",
+                div { style: "display: flex; align-items: center; gap: 0.75rem;",
+                    if let Some(category) = &category {
+                        span { style: "width: 0.75rem; height: 0.75rem; border-radius: 999px; background: {category.color_code}; flex-shrink: 0;" }
+                        span { style: "font-size: 0.75rem; color: #888;", "{category.title}" }
                     }
-                },
-                Some(Some(_)) => rsx! { p { style: "color: #888;", "No questions yet. Create your first one above." } },
-                Some(None) => rsx! { p { "Unable to load your questions." } },
-                None => rsx! { p { "Loading..." } },
+                }
+                div { style: "font-weight: 600;", "{question.title}" }
+                div { style: "color: #888;", "{question.answer}" }
+                div { style: "display: flex; gap: 0.5rem;",
+                    if confirming_delete() {
+                        Button {
+                            variant: ButtonVariant::Destructive,
+                            disabled: delete_submitting(),
+                            onclick: on_delete,
+                            if delete_submitting() { "Deleting..." } else { "Confirm" }
+                        }
+                        Button {
+                            variant: ButtonVariant::Ghost,
+                            disabled: delete_submitting(),
+                            onclick: move |_| confirming_delete.set(false),
+                            "Cancel"
+                        }
+                    } else {
+                        Button {
+                            variant: ButtonVariant::Destructive,
+                            onclick: move |_| confirming_delete.set(true),
+                            "Delete"
+                        }
+                    }
+                }
             }
         }
     }

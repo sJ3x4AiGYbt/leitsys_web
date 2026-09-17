@@ -21,6 +21,7 @@ pub fn Home() -> Element {
     let today = calendar::today();
     let mut displayed = use_signal(|| (today.year(), today.month()));
     let (year, month) = displayed();
+    let mut selected_day = use_signal(|| None::<Date>);
 
     let due_dates: Vec<Date> = match &*questions.read() {
         Some(Some(qs)) => qs.iter().filter_map(|q| calendar::parse_date(&q.next_review_date)).collect(),
@@ -31,6 +32,15 @@ pub fn Home() -> Element {
     let today_count = due_dates.iter().filter(|d| **d == today).count();
     let month_count = due_dates.iter().filter(|d| d.year() == year && d.month() == month).count();
     let active_count = due_dates.len();
+
+    let day_titles: Vec<String> = match (selected_day(), &*questions.read()) {
+        (Some(date), Some(Some(qs))) => qs
+            .iter()
+            .filter(|q| calendar::parse_date(&q.next_review_date) == Some(date))
+            .map(|q| q.title.clone())
+            .collect(),
+        _ => Vec::new(),
+    };
 
     rsx! {
         div {
@@ -168,7 +178,36 @@ pub fn Home() -> Element {
             div {
                 style: "display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.25rem;",
                 for cell in calendar::month_grid(year, month) {
-                    DayTile { cell, count: due_dates.iter().filter(|d| **d == cell.date).count(), is_today: cell.date == today }
+                    DayTile {
+                        cell,
+                        count: due_dates.iter().filter(|d| **d == cell.date).count(),
+                        is_today: cell.date == today,
+                        is_selected: selected_day() == Some(cell.date),
+                        onclick: move |date| {
+                            selected_day.set(if selected_day() == Some(date) { None } else { Some(date) });
+                        },
+                    }
+                }
+            }
+
+            if let Some(date) = selected_day() {
+                div {
+                    style: "border: 1px solid #ddd; border-radius: 8px; padding: 1rem; display: flex; flex-direction: column; gap: 0.5rem;",
+                    div { style: "display: flex; align-items: center; justify-content: space-between;",
+                        strong { "Due {date}" }
+                        button {
+                            style: "background: none; border: none; cursor: pointer; color: #888;",
+                            onclick: move |_| selected_day.set(None),
+                            "×"
+                        }
+                    }
+                    if day_titles.is_empty() {
+                        p { style: "color: #888; margin: 0;", "Nothing due this day." }
+                    } else {
+                        for title in day_titles {
+                            p { style: "margin: 0;", "{title}" }
+                        }
+                    }
                 }
             }
         }
@@ -187,13 +226,15 @@ fn StatTile(label: &'static str, value: usize) -> Element {
 }
 
 #[component]
-fn DayTile(cell: DayCell, count: usize, is_today: bool) -> Element {
-    let border = if is_today { "var(--secondary-color-5)" } else { "#ddd" };
+fn DayTile(cell: DayCell, count: usize, is_today: bool, is_selected: bool, onclick: EventHandler<Date>) -> Element {
+    let border = if is_selected { "var(--secondary-color-5)" } else if is_today { "#999" } else { "#ddd" };
+    let background = if is_selected { "rgba(127, 127, 127, 0.1)" } else { "transparent" };
     let opacity = if cell.in_month { "1" } else { "0.35" };
 
     rsx! {
         div {
-            style: "border: 1px solid {border}; border-radius: 6px; padding: 0.4rem; min-height: 3.25rem; display: flex; flex-direction: column; justify-content: space-between; opacity: {opacity};",
+            style: "border: 1px solid {border}; background: {background}; border-radius: 6px; padding: 0.4rem; min-height: 3.25rem; display: flex; flex-direction: column; justify-content: space-between; opacity: {opacity}; cursor: pointer;",
+            onclick: move |_| onclick.call(cell.date),
             span { style: if is_today { "font-weight: bold;" } else { "" }, "{cell.date.day()}" }
             if count > 0 {
                 span { style: "font-size: 0.75rem; color: #888; align-self: flex-end;", "{count}" }

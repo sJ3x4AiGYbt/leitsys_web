@@ -75,6 +75,23 @@ pub fn Home() -> Element {
                     }
                 }
 
+                // Steps (icon stacked bars)
+                button {
+                    style: "background: none; border: none; cursor: pointer;",
+                    onclick: move |_| { nav.push(Route::Steps {}); },
+                    svg {
+                        width: "28",
+                        height: "28",
+                        view_box: "0 0 24 24",
+                        fill: "none",
+                        stroke: "currentColor",
+                        stroke_width: "2",
+                        stroke_linecap: "round",
+                        stroke_linejoin: "round",
+                        path { d: "M4 6h16M7 12h13M10 18h10" }
+                    }
+                }
+
                 // Settings (icon person)
                 button {
                     style: "background: none; border: none; cursor: pointer;",

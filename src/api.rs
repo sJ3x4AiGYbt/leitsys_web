@@ -416,6 +416,100 @@ pub async fn delete_category(id: i64, token: &str) -> Result<String, String> {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+pub struct Step {
+    pub id: i64,
+    pub title: String,
+    pub step_order: i64,
+    pub spacing_days: i64,
+    pub color_code: String,
+}
+
+pub async fn get_my_steps(user_id: i64, token: &str) -> Result<Vec<Step>, String> {
+    let request = reqwest::Client::new()
+        .get(format!("{API_BASE_URL}/steps/user/{user_id}"))
+        .bearer_auth(token);
+
+    let parsed: ApiResponse<Vec<Step>> = send(request).await?;
+
+    if parsed.success {
+        Ok(parsed.data.unwrap_or_default())
+    } else {
+        Err(parsed.message.unwrap_or_else(|| "Unable to fetch steps".to_string()))
+    }
+}
+
+#[derive(Serialize)]
+struct CreateStepRequest<'a> {
+    title: &'a str,
+    spacing_days: i64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    color_code: Option<&'a str>,
+}
+
+pub async fn create_step(token: &str, title: &str, spacing_days: i64, color_code: Option<&str>) -> Result<String, String> {
+    let request = reqwest::Client::new()
+        .post(format!("{API_BASE_URL}/steps"))
+        .bearer_auth(token)
+        .json(&CreateStepRequest { title, spacing_days, color_code });
+
+    let parsed: ApiResponse<()> = send(request).await?;
+
+    if parsed.success {
+        Ok(parsed.message.unwrap_or_else(|| "Step recorded successfully.".to_string()))
+    } else {
+        Err(parsed.message.unwrap_or_else(|| "Unable to create the step".to_string()))
+    }
+}
+
+#[derive(Serialize)]
+struct UpdateStepRequest<'a> {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    title: Option<&'a str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    step_order: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    spacing_days: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    color_code: Option<&'a str>,
+}
+
+pub async fn update_step(
+    id: i64,
+    token: &str,
+    title: Option<&str>,
+    step_order: Option<i64>,
+    spacing_days: Option<i64>,
+    color_code: Option<&str>,
+) -> Result<String, String> {
+    let request = reqwest::Client::new()
+        .put(format!("{API_BASE_URL}/steps/{id}"))
+        .bearer_auth(token)
+        .json(&UpdateStepRequest { title, step_order, spacing_days, color_code });
+
+    let parsed: ApiResponse<()> = send(request).await?;
+
+    if parsed.success {
+        Ok(parsed.message.unwrap_or_else(|| "Step updated successfully.".to_string()))
+    } else {
+        Err(parsed.message.unwrap_or_else(|| "Unable to update the step".to_string()))
+    }
+}
+
+pub async fn delete_step(id: i64, token: &str) -> Result<String, String> {
+    let request = reqwest::Client::new()
+        .delete(format!("{API_BASE_URL}/steps/{id}"))
+        .bearer_auth(token);
+
+    let parsed: ApiResponse<()> = send(request).await?;
+
+    if parsed.success {
+        Ok(parsed.message.unwrap_or_else(|| "Step deleted successfully.".to_string()))
+    } else {
+        Err(parsed.message.unwrap_or_else(|| "Unable to delete the step".to_string()))
+    }
+}
+
 #[derive(Serialize)]
 struct CreateAnswerRequest<'a> {
     question_id: i64,

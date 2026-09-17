@@ -15,7 +15,7 @@ pub fn Review() -> Element {
     let due_questions = use_resource(move || async move {
         let token = auth.token()?;
         let claims = decode_claims(&token)?;
-        api::get_my_questions(claims.user_id, &token, true).await.ok()
+        api::get_my_questions(claims.user_id, &token, false, true).await.ok()
     });
 
     let mut seeded = use_signal(|| false);

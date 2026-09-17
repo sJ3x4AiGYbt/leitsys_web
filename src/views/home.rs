@@ -15,7 +15,7 @@ pub fn Home() -> Element {
     let questions = use_resource(move || async move {
         let token = auth.token()?;
         let claims = decode_claims(&token)?;
-        api::get_my_questions(claims.user_id, &token, false).await.ok()
+        api::get_my_questions(claims.user_id, &token, false, false).await.ok()
     });
 
     let today = calendar::today();

@@ -248,12 +248,13 @@ pub struct Question {
     pub is_archived: bool,
 }
 
-/// Fetches the user's active (non-archived) questions.
+/// Fetches the user's questions.
 ///
-/// When `due_only` is set, restricts to questions due today or overdue
-/// (backend's `status=todo` filter, which is `next_review_date <= now`).
-pub async fn get_my_questions(user_id: i64, token: &str, due_only: bool) -> Result<Vec<Question>, String> {
-    let mut url = format!("{API_BASE_URL}/questions/user/{user_id}?is_archived=false");
+/// `archived` selects mastered (all steps completed) vs. active questions.
+/// When `due_only` is set, restricts active questions to those due today or
+/// overdue (backend's `status=todo` filter, which is `next_review_date <= now`).
+pub async fn get_my_questions(user_id: i64, token: &str, archived: bool, due_only: bool) -> Result<Vec<Question>, String> {
+    let mut url = format!("{API_BASE_URL}/questions/user/{user_id}?is_archived={archived}");
     if due_only {
         url.push_str("&status=todo");
     }

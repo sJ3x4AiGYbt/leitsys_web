@@ -1,6 +1,6 @@
 use dioxus::prelude::*;
 use crate::auth::use_auth;
-use crate::views::{Login, Home, Settings, Contact, ResetPassword, VerifyEmail, Categories, Questions, Review};
+use crate::views::{Login, Home, Settings, Contact, ResetPassword, VerifyEmail, Categories, Questions, Review, Steps};
 
 #[rustfmt::skip]
 #[derive(Routable, Clone, PartialEq)]
@@ -26,6 +26,8 @@ pub enum Route {
         Questions {},
         #[route("/review")]
         Review {},
+        #[route("/steps")]
+        Steps {},
 }
 
 #[component]

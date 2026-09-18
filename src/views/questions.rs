@@ -1,6 +1,6 @@
 use dioxus::prelude::*;
 use dioxus_primitives::toast::{use_toast, ToastOptions};
-use crate::api::{self, decode_claims, Category, Question};
+use crate::api::{self, decode_claims, Category, Question, Step};
 use crate::auth::use_auth;
 use crate::components::button::{Button, ButtonVariant};
 use crate::components::card::{Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter};
@@ -16,6 +16,12 @@ pub fn Questions() -> Element {
         let token = auth.token()?;
         let claims = decode_claims(&token)?;
         api::get_my_categories(claims.user_id, &token).await.ok()
+    });
+
+    let steps = use_resource(move || async move {
+        let token = auth.token()?;
+        let claims = decode_claims(&token)?;
+        api::get_my_steps(claims.user_id, &token).await.ok()
     });
 
     let mut view_archived = use_signal(|| false);
@@ -76,6 +82,17 @@ pub fn Questions() -> Element {
         _ => Vec::new(),
     };
     let has_categories = !cats_for_form.is_empty();
+
+    let mut steps_sorted: Vec<Step> = match &*steps.read() {
+        Some(Some(s)) => s.clone(),
+        _ => Vec::new(),
+    };
+    steps_sorted.sort_by_key(|s| s.step_order);
+    let step_label = |current_step_id: i64| -> Option<String> {
+        let total = steps_sorted.len();
+        let index = steps_sorted.iter().position(|s| s.id == current_step_id)?;
+        Some(format!("Step {}/{total}", index + 1))
+    };
 
     rsx! {
         div {
@@ -164,6 +181,7 @@ pub fn Questions() -> Element {
                             for question in qs.clone() {
                                 ArchivedQuestionRow {
                                     category: cats_for_form.iter().find(|c| c.id == question.category_id).cloned(),
+                                    step_label: step_label(question.current_step_id),
                                     question,
                                     on_changed: move |_| { questions.restart(); },
                                 }
@@ -181,6 +199,7 @@ pub fn Questions() -> Element {
                             for question in qs.clone() {
                                 QuestionRow {
                                     category: cats_for_form.iter().find(|c| c.id == question.category_id).cloned(),
+                                    step_label: step_label(question.current_step_id),
                                     question,
                                     categories: cats_for_form.clone(),
                                     on_changed: move |_| { questions.restart(); },
@@ -198,7 +217,7 @@ pub fn Questions() -> Element {
 }
 
 #[component]
-fn ArchivedQuestionRow(question: Question, category: Option<Category>, on_changed: EventHandler<()>) -> Element {
+fn ArchivedQuestionRow(question: Question, category: Option<Category>, step_label: Option<String>, on_changed: EventHandler<()>) -> Element {
     let auth = use_auth();
     let toast = use_toast();
     let question_id = question.id;
@@ -238,6 +257,9 @@ fn ArchivedQuestionRow(question: Question, category: Option<Category>, on_change
                         span { style: "width: 0.75rem; height: 0.75rem; border-radius: 999px; background: {category.color_code}; flex-shrink: 0;" }
                         span { style: "font-size: 0.75rem; color: #888;", "{category.title}" }
                     }
+                    if let Some(label) = &step_label {
+                        span { style: "margin-left: auto; font-size: 0.75rem; color: #888;", "{label}" }
+                    }
                 }
                 div { style: "font-weight: 600;", "{question.title}" }
                 div { style: "color: #888;", "{question.answer}" }
@@ -269,7 +291,7 @@ fn ArchivedQuestionRow(question: Question, category: Option<Category>, on_change
 }
 
 #[component]
-fn QuestionRow(question: Question, category: Option<Category>, categories: Vec<Category>, on_changed: EventHandler<()>) -> Element {
+fn QuestionRow(question: Question, category: Option<Category>, step_label: Option<String>, categories: Vec<Category>, on_changed: EventHandler<()>) -> Element {
     let auth = use_auth();
     let toast = use_toast();
     let question_id = question.id;
@@ -375,7 +397,12 @@ fn QuestionRow(question: Question, category: Option<Category>, categories: Vec<C
                             span { style: "width: 0.75rem; height: 0.75rem; border-radius: 999px; background: {category.color_code}; flex-shrink: 0;" }
                             span { style: "font-size: 0.75rem; color: #888;", "{category.title}" }
                         }
-                        span { style: "margin-left: auto; font-size: 0.75rem; color: #888;", "Due {due_date}" }
+                        div { style: "margin-left: auto; display: flex; gap: 0.75rem;",
+                            if let Some(label) = &step_label {
+                                span { style: "font-size: 0.75rem; color: #888;", "{label}" }
+                            }
+                            span { style: "font-size: 0.75rem; color: #888;", "Due {due_date}" }
+                        }
                     }
                     div { style: "font-weight: 600;", "{question.title}" }
                     div { style: "display: flex; gap: 0.5rem;",

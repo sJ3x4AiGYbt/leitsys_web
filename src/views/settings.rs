@@ -7,6 +7,7 @@ use crate::components::button::{Button, ButtonVariant};
 use crate::components::card::{Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter};
 use crate::components::input::Input;
 use crate::components::label::Label;
+use crate::components::password_rules::PasswordRules;
 
 #[component]
 pub fn Settings() -> Element {
@@ -196,6 +197,7 @@ pub fn Settings() -> Element {
                                             value: "{new_password}",
                                             oninput: move |e: FormEvent| new_password.set(e.value()),
                                         }
+                                        PasswordRules { password: new_password() }
                                     }
                                     div { style: "display: grid; gap: 0.5rem;",
                                         Label { html_for: "confirm-password", "Confirm password" }

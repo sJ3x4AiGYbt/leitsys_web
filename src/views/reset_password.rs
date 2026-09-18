@@ -6,6 +6,7 @@ use crate::components::card::{Card, CardHeader, CardTitle, CardDescription, Card
 use crate::components::button::Button;
 use crate::components::input::Input;
 use crate::components::label::Label;
+use crate::components::password_rules::PasswordRules;
 
 #[component]
 pub fn ResetPassword(token: String) -> Element {
@@ -64,6 +65,7 @@ pub fn ResetPassword(token: String) -> Element {
                                     value: "{password}",
                                     oninput: move |e: FormEvent| password.set(e.value()),
                                 }
+                                PasswordRules { password: password() }
                             }
                             div { style: "display: grid; gap: 0.5rem;",
                                 Label { html_for: "confirm-password", "Confirm password" }

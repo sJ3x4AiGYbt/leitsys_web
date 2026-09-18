@@ -5,10 +5,18 @@ mod routes;
 mod views;
 mod components;
 
+use std::time::Duration;
+
 use dioxus::prelude::*;
+use dioxus_sdk_time::sleep;
 use routes::Route;
 use auth::provide_auth;
 use components::toast::ToastProvider;
+
+/// The access token expires after 15 minutes (see `generate_access_token`
+/// server-side); refresh well before that so a tab left open doesn't start
+/// hitting 401s mid-session.
+const REFRESH_INTERVAL: Duration = Duration::from_secs(12 * 60);
 
 const FAVICON: Asset = asset!("/assets/favicon.ico");
 const DX_COMPONENTS_CSS: Asset = asset!("/assets/dx-components-theme.css");
@@ -27,6 +35,15 @@ fn App() -> Element {
                 auth.login(token);
             }
             auth.finish_restoring();
+
+            loop {
+                sleep(REFRESH_INTERVAL).await;
+                if auth.is_logged_in() {
+                    if let Ok(token) = api::refresh().await {
+                        auth.login(token);
+                    }
+                }
+            }
         });
     });
 

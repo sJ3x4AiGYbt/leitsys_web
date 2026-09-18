@@ -7,6 +7,7 @@ use crate::components::card::{Card, CardHeader, CardTitle, CardDescription, Card
 use crate::components::button::{Button, ButtonVariant};
 use crate::components::input::Input;
 use crate::components::label::Label;
+use crate::components::password_rules::PasswordRules;
 
 #[derive(Clone, Copy, PartialEq)]
 enum AuthView {
@@ -203,6 +204,7 @@ fn SignupForm(mut view: Signal<AuthView>) -> Element {
                             value: "{password}",
                             oninput: move |e: FormEvent| password.set(e.value()),
                         }
+                        PasswordRules { password: password() }
                     }
                 }
             }

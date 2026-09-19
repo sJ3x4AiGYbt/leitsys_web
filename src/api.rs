@@ -1,7 +1,10 @@
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use serde::{Deserialize, Serialize};
 
-const API_BASE_URL: &str = "http://localhost:3000";
+const API_BASE_URL: &str = match option_env!("API_BASE_URL") {
+    Some(url) => url,
+    None => "http://localhost:3000",
+};
 
 #[derive(Serialize)]
 struct LoginRequest<'a> {

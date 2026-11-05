@@ -618,3 +618,145 @@ pub async fn delete_user(id: i64, token: &str) -> Result<String, String> {
         Err(parsed.message.unwrap_or_else(|| "Unable to delete the account".to_string()))
     }
 }
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+pub struct QuizOption {
+    pub letter: String,
+    pub text: String,
+    #[serde(default)]
+    pub detail: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+pub struct QuizQuestion {
+    pub id: i64,
+    pub num: i64,
+    pub category: String,
+    pub prompt: String,
+    pub options: Vec<QuizOption>,
+    pub correct: Vec<String>,
+    pub attempts: i64,
+    pub successes: i64,
+    /// `None` if never answered.
+    pub last_correct: Option<bool>,
+}
+
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+pub struct ImportReport {
+    pub read: usize,
+    pub invalid: usize,
+    /// Distinct questions in the text (what "replace" would keep).
+    pub unique: usize,
+    /// Distinct questions not already in the bank (what "add" would insert).
+    pub fresh: usize,
+    pub added: usize,
+    pub total: usize,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ImportMode {
+    Add,
+    Replace,
+}
+
+#[derive(Serialize)]
+struct ImportQuizRequest<'a> {
+    text: &'a str,
+    mode: ImportMode,
+    dry_run: bool,
+}
+
+#[derive(Serialize)]
+struct QuizAttemptRequest<'a> {
+    selected: &'a [String],
+}
+
+pub async fn get_quiz_questions(token: &str) -> Result<Vec<QuizQuestion>, String> {
+    let request = reqwest::Client::new()
+        .get(format!("{API_BASE_URL}/quiz/questions"))
+        .bearer_auth(token);
+
+    let parsed: ApiResponse<Vec<QuizQuestion>> = send(request).await?;
+
+    if parsed.success {
+        Ok(parsed.data.unwrap_or_default())
+    } else {
+        Err(parsed.message.unwrap_or_else(|| "Unable to fetch the quiz bank".to_string()))
+    }
+}
+
+/// Parses `text` server-side. With `dry_run`, nothing is written and the
+/// report only says what `mode` would do.
+pub async fn import_quiz(token: &str, text: &str, mode: ImportMode, dry_run: bool) -> Result<ImportReport, String> {
+    let request = reqwest::Client::new()
+        .post(format!("{API_BASE_URL}/quiz/import"))
+        .bearer_auth(token)
+        .json(&ImportQuizRequest { text, mode, dry_run });
+
+    let parsed: ApiResponse<ImportReport> = send(request).await?;
+
+    if parsed.success {
+        parsed.data.ok_or_else(|| "Invalid response from the server".to_string())
+    } else {
+        Err(parsed.message.unwrap_or_else(|| "Unable to import these questions".to_string()))
+    }
+}
+
+pub async fn delete_quiz_question(id: i64, token: &str) -> Result<String, String> {
+    let request = reqwest::Client::new()
+        .delete(format!("{API_BASE_URL}/quiz/questions/{id}"))
+        .bearer_auth(token);
+
+    let parsed: ApiResponse<()> = send(request).await?;
+
+    if parsed.success {
+        Ok(parsed.message.unwrap_or_else(|| "Quiz question deleted successfully.".to_string()))
+    } else {
+        Err(parsed.message.unwrap_or_else(|| "Unable to delete the question".to_string()))
+    }
+}
+
+pub async fn clear_quiz_bank(token: &str) -> Result<String, String> {
+    let request = reqwest::Client::new()
+        .delete(format!("{API_BASE_URL}/quiz/questions"))
+        .bearer_auth(token);
+
+    let parsed: ApiResponse<()> = send(request).await?;
+
+    if parsed.success {
+        Ok(parsed.message.unwrap_or_else(|| "Quiz bank emptied.".to_string()))
+    } else {
+        Err(parsed.message.unwrap_or_else(|| "Unable to empty the quiz bank".to_string()))
+    }
+}
+
+/// `selected` uses the options' original letters (`QuizOption::letter`).
+/// The view grades locally for instant feedback; this only records it.
+pub async fn submit_quiz_attempt(id: i64, token: &str, selected: &[String]) -> Result<(), String> {
+    let request = reqwest::Client::new()
+        .post(format!("{API_BASE_URL}/quiz/questions/{id}/attempt"))
+        .bearer_auth(token)
+        .json(&QuizAttemptRequest { selected });
+
+    let parsed: ApiResponse<serde_json::Value> = send(request).await?;
+
+    if parsed.success {
+        Ok(())
+    } else {
+        Err(parsed.message.unwrap_or_else(|| "Unable to record the answer".to_string()))
+    }
+}
+
+pub async fn reset_quiz_progress(token: &str) -> Result<String, String> {
+    let request = reqwest::Client::new()
+        .delete(format!("{API_BASE_URL}/quiz/progress"))
+        .bearer_auth(token);
+
+    let parsed: ApiResponse<()> = send(request).await?;
+
+    if parsed.success {
+        Ok(parsed.message.unwrap_or_else(|| "Quiz progress reset.".to_string()))
+    } else {
+        Err(parsed.message.unwrap_or_else(|| "Unable to reset your progress".to_string()))
+    }
+}

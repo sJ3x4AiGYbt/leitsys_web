@@ -8,6 +8,7 @@ pub mod categories;
 pub mod questions;
 pub mod review;
 pub mod steps;
+pub mod quiz;
 
 pub use login::Login;
 pub use home::Home;
@@ -19,3 +20,4 @@ pub use categories::Categories;
 pub use questions::Questions;
 pub use review::Review;
 pub use steps::Steps;
+pub use quiz::Quiz;

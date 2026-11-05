@@ -153,6 +153,12 @@ pub fn Home() -> Element {
                 "Start review"
             }
 
+            button {
+                style: "background: none; color: inherit; border: 1px solid var(--secondary-color-5); border-radius: 8px; padding: 0.75rem; font-size: 1rem; font-weight: 600; cursor: pointer;",
+                onclick: move |_| { nav.push(Route::Quiz {}); },
+                "Multiple-choice quiz"
+            }
+
             div {
                 style: "display: flex; align-items: center; justify-content: center; gap: 1.5rem;",
                 button {

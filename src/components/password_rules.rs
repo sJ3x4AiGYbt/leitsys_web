@@ -27,7 +27,7 @@ pub fn PasswordRules(password: String) -> Element {
 
 #[component]
 fn PasswordRule(met: bool, label: &'static str) -> Element {
-    let color = if met { "#2ecc71" } else { "#888" };
+    let color = if met { "var(--success)" } else { "var(--text-muted)" };
     rsx! {
         li { style: "color: {color};", if met { "✓ " } else { "○ " } "{label}" }
     }

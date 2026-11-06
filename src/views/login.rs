@@ -23,7 +23,8 @@ pub fn Login() -> Element {
 
     rsx! {
         div {
-            style: "max-width: 400px; margin: 5rem auto;",
+            class: "auth-screen",
+            div { class: "auth-brand", "leitsys" }
             Card {
                 style: "width: 100%; max-width: 24rem;",
                 match view() {
@@ -82,8 +83,8 @@ fn LoginForm(mut view: Signal<AuthView>) -> Element {
             form {
                 id: "login-form",
                 onsubmit: on_submit,
-                div { style: "display: flex; flex-direction: column; gap: 1.5rem;",
-                    div { style: "display: grid; gap: 0.5rem;",
+                div { class: "stack",
+                    div { class: "field",
                         Label { html_for: "username", "Username" }
                         Input {
                             id: "username",
@@ -93,12 +94,12 @@ fn LoginForm(mut view: Signal<AuthView>) -> Element {
                             oninput: move |e: FormEvent| username.set(e.value()),
                         }
                     }
-                    div { style: "display: grid; gap: 0.5rem;",
-                        div { style: "display: flex; align-items: center;",
+                    div { class: "field",
+                        div { class: "row",
                             Label { html_for: "password", "Password" }
                             a {
                                 onclick: move |_| view.set(AuthView::ForgotPassword),
-                                style: "margin-left: auto; font-size: 0.875rem; color: var(--secondary-color-5); text-decoration: underline; text-underline-offset: 4px;",
+                                class: "text-link push-right",
                                 "Forgot your password?"
                             }
                         }
@@ -128,7 +129,7 @@ fn LoginForm(mut view: Signal<AuthView>) -> Element {
             }
             a {
                 onclick: move |_| view.set(AuthView::ResendVerification),
-                style: "font-size: 0.875rem; color: var(--secondary-color-5); text-decoration: underline; text-underline-offset: 4px; cursor: pointer;",
+                class: "text-link",
                 "Didn't get a verification email?"
             }
         }
@@ -175,8 +176,8 @@ fn SignupForm(mut view: Signal<AuthView>) -> Element {
             form {
                 id: "signup-form",
                 onsubmit: on_submit,
-                div { style: "display: flex; flex-direction: column; gap: 1.5rem;",
-                    div { style: "display: grid; gap: 0.5rem;",
+                div { class: "stack",
+                    div { class: "field",
                         Label { html_for: "username", "Username" }
                         Input {
                             id: "username",
@@ -186,7 +187,7 @@ fn SignupForm(mut view: Signal<AuthView>) -> Element {
                             oninput: move |e: FormEvent| username.set(e.value()),
                         }
                     }
-                    div { style: "display: grid; gap: 0.5rem;",
+                    div { class: "field",
                         Label { html_for: "email", "Email" }
                         Input {
                             id: "email",
@@ -196,7 +197,7 @@ fn SignupForm(mut view: Signal<AuthView>) -> Element {
                             oninput: move |e: FormEvent| email.set(e.value()),
                         }
                     }
-                    div { style: "display: grid; gap: 0.5rem;",
+                    div { class: "field",
                         Label { html_for: "password", "Password" }
                         Input {
                             id: "password",
@@ -265,7 +266,7 @@ fn ForgotPasswordForm(mut view: Signal<AuthView>) -> Element {
             form {
                 id: "forgot-password-form",
                 onsubmit: on_submit,
-                div { style: "display: grid; gap: 0.5rem;",
+                div { class: "field",
                     Label { html_for: "email", "Email" }
                     Input {
                         id: "email",
@@ -333,7 +334,7 @@ fn ResendVerificationForm(mut view: Signal<AuthView>) -> Element {
             form {
                 id: "resend-verification-form",
                 onsubmit: on_submit,
-                div { style: "display: grid; gap: 0.5rem;",
+                div { class: "field",
                     Label { html_for: "email", "Email" }
                     Input {
                         id: "email",

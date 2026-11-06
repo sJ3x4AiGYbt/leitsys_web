@@ -2,7 +2,8 @@
 .label {
   display: flex;
   align-items: center;
-  color: var(--secondary-color-4);
-  font-size: 0.8rem;
-  line-height: 1;
+  color: var(--text);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.2;
 }

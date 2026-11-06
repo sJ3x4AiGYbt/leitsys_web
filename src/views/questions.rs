@@ -96,17 +96,19 @@ pub fn Questions() -> Element {
 
     rsx! {
         div {
-            style: "max-width: 640px; margin: 3rem auto; display: flex; flex-direction: column; gap: 1.5rem;",
+            class: "page",
             h1 { "Questions" }
 
-            div { style: "display: flex; gap: 0.5rem;",
-                Button {
-                    variant: if view_archived() { ButtonVariant::Outline } else { ButtonVariant::Primary },
+            div { class: "segmented",
+                button {
+                    r#type: "button",
+                    "aria-pressed": "{!view_archived()}",
                     onclick: move |_| view_archived.set(false),
                     "Active"
                 }
-                Button {
-                    variant: if view_archived() { ButtonVariant::Primary } else { ButtonVariant::Outline },
+                button {
+                    r#type: "button",
+                    "aria-pressed": "{view_archived()}",
                     onclick: move |_| view_archived.set(true),
                     "Mastered"
                 }
@@ -123,8 +125,8 @@ pub fn Questions() -> Element {
                         form {
                             id: "question-form",
                             onsubmit: on_create,
-                            div { style: "display: flex; flex-direction: column; gap: 1rem;",
-                                div { style: "display: grid; gap: 0.5rem;",
+                            div { class: "stack",
+                                div { class: "field",
                                     Label { html_for: "question-title", "Title" }
                                     Input {
                                         id: "question-title",
@@ -133,17 +135,16 @@ pub fn Questions() -> Element {
                                         oninput: move |e: FormEvent| new_title.set(e.value()),
                                     }
                                 }
-                                div { style: "display: grid; gap: 0.5rem;",
+                                div { class: "field",
                                     Label { html_for: "question-answer", "Answer" }
                                     textarea {
                                         id: "question-answer",
                                         rows: "3",
-                                        style: "padding: 0.5rem; border-radius: 6px; border: 1px solid #ccc; font: inherit;",
                                         value: "{new_answer}",
                                         oninput: move |e: FormEvent| new_answer.set(e.value()),
                                     }
                                 }
-                                div { style: "display: grid; gap: 0.5rem;",
+                                div { class: "field",
                                     Label { html_for: "question-category", "Category" }
                                     select {
                                         id: "question-category",
@@ -160,7 +161,7 @@ pub fn Questions() -> Element {
                             }
                         }
                     } else {
-                        p { style: "color: #888;", "Create a category first before adding questions." }
+                        p { class: "muted", "Create a category first before adding questions." }
                     }
                 }
                 CardFooter {
@@ -177,7 +178,7 @@ pub fn Questions() -> Element {
             if view_archived() {
                 match &*questions.read() {
                     Some(Some(qs)) if !qs.is_empty() => rsx! {
-                        div { style: "display: flex; flex-direction: column; gap: 0.75rem;",
+                        div { class: "stack-sm",
                             for question in qs.clone() {
                                 ArchivedQuestionRow {
                                     category: cats_for_form.iter().find(|c| c.id == question.category_id).cloned(),
@@ -188,14 +189,14 @@ pub fn Questions() -> Element {
                             }
                         }
                     },
-                    Some(Some(_)) => rsx! { p { style: "color: #888;", "No mastered questions yet." } },
+                    Some(Some(_)) => rsx! { p { class: "muted", "No mastered questions yet." } },
                     Some(None) => rsx! { p { "Unable to load your questions." } },
                     None => rsx! { p { "Loading..." } },
                 }
             } else {
                 match &*questions.read() {
                     Some(Some(qs)) if !qs.is_empty() => rsx! {
-                        div { style: "display: flex; flex-direction: column; gap: 0.75rem;",
+                        div { class: "stack-sm",
                             for question in qs.clone() {
                                 QuestionRow {
                                     category: cats_for_form.iter().find(|c| c.id == question.category_id).cloned(),
@@ -207,7 +208,7 @@ pub fn Questions() -> Element {
                             }
                         }
                     },
-                    Some(Some(_)) => rsx! { p { style: "color: #888;", "No questions yet. Create your first one above." } },
+                    Some(Some(_)) => rsx! { p { class: "muted", "No questions yet. Create your first one above." } },
                     Some(None) => rsx! { p { "Unable to load your questions." } },
                     None => rsx! { p { "Loading..." } },
                 }
@@ -250,20 +251,20 @@ fn ArchivedQuestionRow(question: Question, category: Option<Category>, step_labe
     };
 
     rsx! {
-        Card {
-            CardContent { style: "display: flex; flex-direction: column; gap: 0.5rem; padding: 1rem;",
-                div { style: "display: flex; align-items: center; gap: 0.75rem;",
+        Card { "data-size": "compact",
+            CardContent { style: "display: flex; flex-direction: column; gap: 0.5rem;",
+                div { class: "row",
                     if let Some(category) = &category {
-                        span { style: "width: 0.75rem; height: 0.75rem; border-radius: 999px; background: {category.color_code}; flex-shrink: 0;" }
-                        span { style: "font-size: 0.75rem; color: #888;", "{category.title}" }
+                        span { class: "dot", style: "background: {category.color_code};" }
+                        span { class: "muted small", "{category.title}" }
                     }
                     if let Some(label) = &step_label {
-                        span { style: "margin-left: auto; font-size: 0.75rem; color: #888;", "{label}" }
+                        span { class: "muted small push-right", "{label}" }
                     }
                 }
-                div { style: "font-weight: 600;", "{question.title}" }
-                div { style: "color: #888;", "{question.answer}" }
-                div { style: "display: flex; gap: 0.5rem;",
+                div { class: "strong", "{question.title}" }
+                div { class: "muted", "{question.answer}" }
+                div { class: "row", style: "gap: 0.5rem;",
                     if confirming_delete() {
                         Button {
                             variant: ButtonVariant::Destructive,
@@ -354,8 +355,8 @@ fn QuestionRow(question: Question, category: Option<Category>, step_label: Optio
     };
 
     rsx! {
-        Card {
-            CardContent { style: "display: flex; flex-direction: column; gap: 0.75rem; padding: 1rem;",
+        Card { "data-size": "compact",
+            CardContent { style: "display: flex; flex-direction: column; gap: 0.75rem;",
                 if is_editing() {
                     Input {
                         r#type: "text",
@@ -364,7 +365,6 @@ fn QuestionRow(question: Question, category: Option<Category>, step_label: Optio
                     }
                     textarea {
                         rows: "2",
-                        style: "padding: 0.5rem; border-radius: 6px; border: 1px solid #ccc; font: inherit;",
                         value: "{edit_answer}",
                         oninput: move |e: FormEvent| edit_answer.set(e.value()),
                     }
@@ -378,7 +378,7 @@ fn QuestionRow(question: Question, category: Option<Category>, step_label: Optio
                             }
                         }
                     }
-                    div { style: "display: flex; gap: 0.5rem;",
+                    div { class: "row", style: "gap: 0.5rem;",
                         Button {
                             disabled: edit_submitting(),
                             onclick: on_save,
@@ -392,20 +392,20 @@ fn QuestionRow(question: Question, category: Option<Category>, step_label: Optio
                         }
                     }
                 } else {
-                    div { style: "display: flex; align-items: center; gap: 0.75rem;",
+                    div { class: "row",
                         if let Some(category) = &category {
-                            span { style: "width: 0.75rem; height: 0.75rem; border-radius: 999px; background: {category.color_code}; flex-shrink: 0;" }
-                            span { style: "font-size: 0.75rem; color: #888;", "{category.title}" }
+                            span { class: "dot", style: "background: {category.color_code};" }
+                            span { class: "muted small", "{category.title}" }
                         }
-                        div { style: "margin-left: auto; display: flex; gap: 0.75rem;",
+                        div { class: "row push-right",
                             if let Some(label) = &step_label {
-                                span { style: "font-size: 0.75rem; color: #888;", "{label}" }
+                                span { class: "muted small", "{label}" }
                             }
-                            span { style: "font-size: 0.75rem; color: #888;", "Due {due_date}" }
+                            span { class: "muted small", "Due {due_date}" }
                         }
                     }
-                    div { style: "font-weight: 600;", "{question.title}" }
-                    div { style: "display: flex; gap: 0.5rem;",
+                    div { class: "strong", "{question.title}" }
+                    div { class: "row", style: "gap: 0.5rem;",
                         if confirming_delete() {
                             Button {
                                 variant: ButtonVariant::Destructive,

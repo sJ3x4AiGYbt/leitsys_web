@@ -51,7 +51,7 @@ pub fn Categories() -> Element {
 
     rsx! {
         div {
-            style: "max-width: 480px; margin: 3rem auto; display: flex; flex-direction: column; gap: 1.5rem;",
+            class: "page",
             h1 { "Categories" }
 
             Card {
@@ -63,8 +63,8 @@ pub fn Categories() -> Element {
                     form {
                         id: "category-form",
                         onsubmit: on_create,
-                        div { style: "display: flex; gap: 1rem; align-items: flex-end;",
-                            div { style: "flex: 1; display: grid; gap: 0.5rem;",
+                        div { class: "row-end",
+                            div { class: "field grow",
                                 Label { html_for: "category-title", "Title" }
                                 Input {
                                     id: "category-title",
@@ -73,7 +73,7 @@ pub fn Categories() -> Element {
                                     oninput: move |e: FormEvent| new_title.set(e.value()),
                                 }
                             }
-                            div { style: "display: grid; gap: 0.5rem;",
+                            div { class: "field",
                                 Label { html_for: "category-color", "Color" }
                                 input {
                                     id: "category-color",
@@ -97,7 +97,7 @@ pub fn Categories() -> Element {
 
             match &*categories.read() {
                 Some(Some(cats)) if !cats.is_empty() => rsx! {
-                    div { style: "display: flex; flex-direction: column; gap: 0.75rem;",
+                    div { class: "stack-sm",
                         for category in cats.clone() {
                             CategoryRow {
                                 category,
@@ -106,7 +106,7 @@ pub fn Categories() -> Element {
                         }
                     }
                 },
-                Some(Some(_)) => rsx! { p { style: "color: #888;", "No categories yet. Create your first one above." } },
+                Some(Some(_)) => rsx! { p { class: "muted", "No categories yet. Create your first one above." } },
                 Some(None) => rsx! { p { "Unable to load your categories." } },
                 None => rsx! { p { "Loading..." } },
             }
@@ -176,8 +176,8 @@ fn CategoryRow(category: Category, on_changed: EventHandler<()>) -> Element {
     };
 
     rsx! {
-        Card {
-            CardContent { style: "display: flex; align-items: center; gap: 1rem; padding: 1rem;",
+        Card { "data-size": "compact",
+            CardContent { style: "display: flex; align-items: center; gap: 0.75rem;",
                 if is_editing() {
                     input {
                         r#type: "color",
@@ -202,8 +202,8 @@ fn CategoryRow(category: Category, on_changed: EventHandler<()>) -> Element {
                         "Cancel"
                     }
                 } else {
-                    span { style: "width: 1rem; height: 1rem; border-radius: 999px; background: {category.color_code}; flex-shrink: 0;" }
-                    span { style: "flex: 1;", "{category.title}" }
+                    span { class: "dot dot-lg", style: "background: {category.color_code};" }
+                    span { class: "grow", "{category.title}" }
                     if confirming_delete() {
                         Button {
                             variant: ButtonVariant::Destructive,

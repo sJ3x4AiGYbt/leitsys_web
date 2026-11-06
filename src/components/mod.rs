@@ -5,3 +5,5 @@ pub mod label;
 pub mod button;
 pub mod toast;
 pub mod password_rules;
+
+pub mod app_shell;

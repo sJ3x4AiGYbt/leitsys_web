@@ -15,7 +15,8 @@ pub fn VerifyEmail(token: String) -> Element {
 
     rsx! {
         div {
-            style: "max-width: 400px; margin: 5rem auto;",
+            class: "auth-screen",
+            div { class: "auth-brand", "leitsys" }
             Card {
                 style: "width: 100%; max-width: 24rem;",
                 CardHeader {

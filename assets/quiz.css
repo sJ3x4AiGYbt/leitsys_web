@@ -1,20 +1,21 @@
 /* Quiz view. Ported from the standalone quiz page, with its colors mapped
- * onto the dx-components theme so it follows light/dark like the rest. */
+ * onto the app tokens (app.css) so it follows light/dark like the rest. */
 .quiz-page {
-  --quiz-line: var(--light, var(--primary-color-6)) var(--dark, var(--primary-color-5));
-  --quiz-sheet: var(--light, var(--primary-color-2)) var(--dark, var(--primary-color-3));
-  --quiz-paper: var(--light, var(--primary-color-4)) var(--dark, var(--primary-color-1));
-  --quiz-muted: var(--secondary-color-5);
-  --quiz-accent: var(--focused-border-color);
-  --quiz-accent-soft: var(--light, #e3eafc) var(--dark, #1b2846);
+  --quiz-line: var(--border);
+  --quiz-sheet: var(--surface);
+  --quiz-paper: var(--surface-2);
+  --quiz-muted: var(--text-muted);
+  --quiz-accent: var(--accent);
+  --quiz-accent-soft: var(--accent-soft);
   --quiz-good: var(--light, #137a4b) var(--dark, #5fd49a);
   --quiz-good-soft: var(--light, #ddf3e8) var(--dark, #10301f);
   --quiz-bad: var(--light, #b3261e) var(--dark, #ff8a80);
   --quiz-bad-soft: var(--light, #fbe3e1) var(--dark, #3a1614);
 
+  box-sizing: border-box;
   max-width: 780px;
-  margin: 2rem auto 5rem;
-  padding: 0 16px;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 5rem;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -33,7 +34,7 @@
 
 .quiz-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
 .quiz-muted { color: var(--quiz-muted); margin: 0; }
-.quiz-muted strong { color: var(--secondary-color-4); }
+.quiz-muted strong { color: var(--text); }
 .quiz-hint { font-size: 0.85rem; color: var(--quiz-muted); margin: 0; }
 .quiz-rich { white-space: pre-line; overflow-wrap: anywhere; min-width: 0; }
 
@@ -51,7 +52,7 @@
   font-family: inherit; font-size: 0.95rem; font-weight: 500; color: var(--quiz-muted); background: none; border: 0;
   border-bottom: 2px solid transparent; padding: 10px 12px; cursor: pointer;
 }
-.quiz-tabs button:hover { color: var(--secondary-color-4); }
+.quiz-tabs button:hover { color: var(--text); }
 .quiz-tabs button[aria-current="page"] { color: var(--quiz-accent); border-bottom-color: var(--quiz-accent); }
 
 /* Toolbar and filters */
@@ -60,14 +61,14 @@
 .quiz-filters { display: flex; flex-wrap: wrap; gap: 8px; }
 .quiz-chip {
   font-family: inherit; font-size: 0.9rem; font-weight: 500; border: 1px solid var(--quiz-line); background: var(--quiz-sheet);
-  color: var(--secondary-color-4); padding: 6px 12px; border-radius: 999px; cursor: pointer;
+  color: var(--text); padding: 6px 12px; border-radius: 999px; cursor: pointer;
 }
 .quiz-chip[aria-pressed="true"] { background: var(--quiz-accent); border-color: var(--quiz-accent); color: #fff; }
 .quiz-chip:disabled { opacity: 0.45; cursor: not-allowed; }
 .quiz-chip-count { font-size: 0.75rem; opacity: 0.75; margin-left: 4px; }
 .quiz-select, .quiz-field {
   font: inherit; font-size: 0.9rem; padding: 7px 10px; border: 1px solid var(--quiz-line); border-radius: 6px;
-  background: var(--quiz-sheet); color: var(--secondary-color-4); min-width: 0;
+  background: var(--quiz-sheet); color: var(--text); min-width: 0;
 }
 .quiz-field { width: 100%; box-sizing: border-box; }
 .quiz-textarea {
@@ -94,7 +95,7 @@
 }
 .quiz-options { display: grid; gap: 8px; }
 .quiz-option {
-  text-align: left; font: inherit; font-size: 0.95rem; line-height: 1.45; color: var(--secondary-color-4);
+  text-align: left; font: inherit; font-size: 0.95rem; line-height: 1.45; color: var(--text);
   background: var(--quiz-paper); border: 1px solid var(--quiz-line); border-radius: 8px; padding: 11px 14px;
   cursor: pointer; display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; align-items: baseline;
 }
@@ -113,7 +114,7 @@
   grid-column: 2; font-size: 0.875rem; line-height: 1.55; color: var(--quiz-muted);
   border-top: 1px solid var(--quiz-line); padding-top: 8px; margin-top: 2px;
 }
-.quiz-option.right .quiz-detail, .quiz-option.missed .quiz-detail { color: var(--secondary-color-4); }
+.quiz-option.right .quiz-detail, .quiz-option.missed .quiz-detail { color: var(--text); }
 
 .quiz-feedback { border-radius: 8px; padding: 12px 14px; background: var(--quiz-paper); font-size: 0.95rem; }
 .quiz-feedback b { display: block; margin-bottom: 2px; }

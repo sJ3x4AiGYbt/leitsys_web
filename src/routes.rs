@@ -1,5 +1,6 @@
 use dioxus::prelude::*;
 use crate::auth::use_auth;
+use crate::components::app_shell::AppShell;
 use crate::views::{Login, Home, Settings, Contact, ResetPassword, VerifyEmail, Categories, Questions, Review, Steps, Quiz};
 
 #[rustfmt::skip]
@@ -72,7 +73,9 @@ fn RequireAuth() -> Element {
         // whether the refresh cookie actually restores a session.
         rsx! { div {} }
     } else if auth.is_logged_in() {
-        rsx! { Outlet::<Route> {} }
+        rsx! {
+            AppShell { Outlet::<Route> {} }
+        }
     } else {
         rsx! { div {} }
     }

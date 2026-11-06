@@ -72,8 +72,8 @@ pub fn Review() -> Element {
 
     rsx! {
         div {
-            style: "max-width: 480px; margin: 3rem auto; display: flex; flex-direction: column; gap: 1.5rem;",
-            div { style: "display: flex; align-items: center; justify-content: space-between;",
+            class: "page",
+            div { class: "page-header",
                 h1 { "Review" }
                 Button {
                     variant: ButtonVariant::Ghost,
@@ -100,21 +100,20 @@ pub fn Review() -> Element {
                     }
                 },
                 (Some(Some(_)), Some(question)) => rsx! {
-                    p { style: "color: #888; margin: 0;", "{queue().len()} left" }
+                    p { class: "muted", "{queue().len()} left" }
                     Card {
                         CardHeader {
                             CardTitle { "{question.title}" }
                         }
-                        CardContent { style: "display: flex; flex-direction: column; gap: 1rem;",
+                        CardContent { class: "stack",
                             if revealed() {
-                                div { style: "padding: 0.75rem; border-radius: 6px; background: rgba(127, 127, 127, 0.1);",
+                                div { class: "answer-box",
                                     "{question.answer}"
                                 }
                             } else {
                                 textarea {
                                     rows: "3",
                                     placeholder: "Your answer (optional)",
-                                    style: "padding: 0.5rem; border-radius: 6px; border: 1px solid #ccc; font: inherit;",
                                     value: "{user_response}",
                                     oninput: move |e: FormEvent| user_response.set(e.value()),
                                 }

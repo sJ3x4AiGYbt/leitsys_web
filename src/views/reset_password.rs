@@ -45,7 +45,8 @@ pub fn ResetPassword(token: String) -> Element {
 
     rsx! {
         div {
-            style: "max-width: 400px; margin: 5rem auto;",
+            class: "auth-screen",
+            div { class: "auth-brand", "leitsys" }
             Card {
                 style: "width: 100%; max-width: 24rem;",
                 CardHeader {
@@ -56,8 +57,8 @@ pub fn ResetPassword(token: String) -> Element {
                     form {
                         id: "reset-password-form",
                         onsubmit: on_submit,
-                        div { style: "display: flex; flex-direction: column; gap: 1.5rem;",
-                            div { style: "display: grid; gap: 0.5rem;",
+                        div { class: "stack",
+                            div { class: "field",
                                 Label { html_for: "password", "New password" }
                                 Input {
                                     id: "password",
@@ -67,7 +68,7 @@ pub fn ResetPassword(token: String) -> Element {
                                 }
                                 PasswordRules { password: password() }
                             }
-                            div { style: "display: grid; gap: 0.5rem;",
+                            div { class: "field",
                                 Label { html_for: "confirm-password", "Confirm password" }
                                 Input {
                                     id: "confirm-password",

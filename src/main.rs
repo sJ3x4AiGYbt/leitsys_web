@@ -20,6 +20,7 @@ const REFRESH_INTERVAL: Duration = Duration::from_secs(12 * 60);
 
 const FAVICON: Asset = asset!("/assets/favicon.ico");
 const DX_COMPONENTS_CSS: Asset = asset!("/assets/dx-components-theme.css");
+const APP_CSS: Asset = asset!("/assets/app.css");
 
 fn main() {
     dioxus::launch(App);
@@ -50,6 +51,7 @@ fn App() -> Element {
     rsx! {
         document::Link { rel: "icon", href: FAVICON }
         document::Link { rel: "stylesheet", href: DX_COMPONENTS_CSS }
+        document::Link { rel: "stylesheet", href: APP_CSS }
         ToastProvider {
             Router::<Route> {}
         }

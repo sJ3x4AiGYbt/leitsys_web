@@ -64,9 +64,9 @@ pub fn Steps() -> Element {
 
     rsx! {
         div {
-            style: "max-width: 560px; margin: 3rem auto; display: flex; flex-direction: column; gap: 1.5rem;",
+            class: "page",
             h1 { "Steps" }
-            p { style: "color: #888; margin: 0;", "Questions move through these steps as you review them. Spacing is in days." }
+            p { class: "muted", "Questions move through these steps as you review them. Spacing is in days." }
 
             Card {
                 CardHeader {
@@ -77,8 +77,8 @@ pub fn Steps() -> Element {
                     form {
                         id: "step-form",
                         onsubmit: on_create,
-                        div { style: "display: flex; gap: 1rem; align-items: flex-end;",
-                            div { style: "flex: 1; display: grid; gap: 0.5rem;",
+                        div { class: "row-end",
+                            div { class: "field grow",
                                 Label { html_for: "step-title", "Title" }
                                 Input {
                                     id: "step-title",
@@ -87,7 +87,7 @@ pub fn Steps() -> Element {
                                     oninput: move |e: FormEvent| new_title.set(e.value()),
                                 }
                             }
-                            div { style: "width: 6rem; display: grid; gap: 0.5rem;",
+                            div { class: "field", style: "width: 6rem;",
                                 Label { html_for: "step-spacing", "Days" }
                                 input {
                                     id: "step-spacing",
@@ -97,7 +97,7 @@ pub fn Steps() -> Element {
                                     oninput: move |e: FormEvent| new_spacing_days.set(e.value()),
                                 }
                             }
-                            div { style: "display: grid; gap: 0.5rem;",
+                            div { class: "field",
                                 Label { html_for: "step-color", "Color" }
                                 input {
                                     id: "step-color",
@@ -121,7 +121,7 @@ pub fn Steps() -> Element {
 
             match &*steps.read() {
                 Some(Some(_)) if count > 0 => rsx! {
-                    div { style: "display: flex; flex-direction: column; gap: 0.75rem;",
+                    div { class: "stack-sm",
                         for (i, step) in sorted.clone().into_iter().enumerate() {
                             StepRow {
                                 step,
@@ -132,7 +132,7 @@ pub fn Steps() -> Element {
                         }
                     }
                 },
-                Some(Some(_)) => rsx! { p { style: "color: #888;", "No steps yet. Create your first one above." } },
+                Some(Some(_)) => rsx! { p { class: "muted", "No steps yet. Create your first one above." } },
                 Some(None) => rsx! { p { "Unable to load your steps." } },
                 None => rsx! { p { "Loading..." } },
             }
@@ -206,9 +206,6 @@ fn StepRow(step: Step, is_first: bool, is_last: bool, on_changed: EventHandler<(
         });
     };
 
-    let up_opacity = if is_first { "0.3" } else { "1" };
-    let down_opacity = if is_last { "0.3" } else { "1" };
-
     let on_delete = move |_| {
         if delete_submitting() {
             return;
@@ -234,8 +231,8 @@ fn StepRow(step: Step, is_first: bool, is_last: bool, on_changed: EventHandler<(
     };
 
     rsx! {
-        Card {
-            CardContent { style: "display: flex; align-items: center; gap: 1rem; padding: 1rem;",
+        Card { "data-size": "compact",
+            CardContent { style: "display: flex; align-items: center; gap: 0.75rem;",
                 if is_editing() {
                     input {
                         r#type: "color",
@@ -267,23 +264,25 @@ fn StepRow(step: Step, is_first: bool, is_last: bool, on_changed: EventHandler<(
                         "Cancel"
                     }
                 } else {
-                    div { style: "display: flex; flex-direction: column; gap: 0.1rem;",
+                    div { style: "display: flex; flex-direction: column;",
                         button {
-                            style: "background: none; border: none; cursor: pointer; opacity: {up_opacity};",
+                            class: "icon-button icon-button-sm",
+                            title: "Move up",
                             disabled: is_first || moving(),
                             onclick: move |_| on_move(-1),
                             "▲"
                         }
                         button {
-                            style: "background: none; border: none; cursor: pointer; opacity: {down_opacity};",
+                            class: "icon-button icon-button-sm",
+                            title: "Move down",
                             disabled: is_last || moving(),
                             onclick: move |_| on_move(1),
                             "▼"
                         }
                     }
-                    span { style: "width: 1rem; height: 1rem; border-radius: 999px; background: {step.color_code}; flex-shrink: 0;" }
-                    span { style: "flex: 1;", "{step.title}" }
-                    span { style: "font-size: 0.75rem; color: #888;", "{step.spacing_days} day(s)" }
+                    span { class: "dot dot-lg", style: "background: {step.color_code};" }
+                    span { class: "grow", "{step.title}" }
+                    span { class: "muted small", "{step.spacing_days} day(s)" }
                     if confirming_delete() {
                         Button {
                             variant: ButtonVariant::Destructive,

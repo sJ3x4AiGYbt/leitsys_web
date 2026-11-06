@@ -133,7 +133,7 @@ pub fn Settings() -> Element {
 
     rsx! {
         div {
-            style: "max-width: 480px; margin: 3rem auto; display: flex; flex-direction: column; gap: 1.5rem;",
+            class: "page",
             h1 { "Parameters" }
 
             match &*user.read() {
@@ -147,8 +147,8 @@ pub fn Settings() -> Element {
                             form {
                                 id: "profile-form",
                                 onsubmit: on_save_profile,
-                                div { style: "display: flex; flex-direction: column; gap: 1.5rem;",
-                                    div { style: "display: grid; gap: 0.5rem;",
+                                div { class: "stack",
+                                    div { class: "field",
                                         Label { html_for: "username", "Username" }
                                         Input {
                                             id: "username",
@@ -157,7 +157,7 @@ pub fn Settings() -> Element {
                                             oninput: move |e: FormEvent| username.set(e.value()),
                                         }
                                     }
-                                    div { style: "display: grid; gap: 0.5rem;",
+                                    div { class: "field",
                                         Label { html_for: "email", "Email" }
                                         Input {
                                             id: "email",
@@ -188,8 +188,8 @@ pub fn Settings() -> Element {
                             form {
                                 id: "password-form",
                                 onsubmit: on_change_password,
-                                div { style: "display: flex; flex-direction: column; gap: 1.5rem;",
-                                    div { style: "display: grid; gap: 0.5rem;",
+                                div { class: "stack",
+                                    div { class: "field",
                                         Label { html_for: "new-password", "New password" }
                                         Input {
                                             id: "new-password",
@@ -199,7 +199,7 @@ pub fn Settings() -> Element {
                                         }
                                         PasswordRules { password: new_password() }
                                     }
-                                    div { style: "display: grid; gap: 0.5rem;",
+                                    div { class: "field",
                                         Label { html_for: "confirm-password", "Confirm password" }
                                         Input {
                                             id: "confirm-password",
